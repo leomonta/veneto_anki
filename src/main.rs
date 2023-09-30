@@ -6,10 +6,10 @@ mod constants;
 use std::process::Command;
 
 fn curlPage(letter: char, offset: u32) -> Vec<u8> {
-	println!("{}?ciave={}&offset={}", constants::constants::baseUrl, letter, offset);
+	println!("{}?{}={}&{}={}", constants::baseUrl, constants::ciave, letter, constants::offset, offset);
 
 	let scrape = Command::new("curl")
-		.arg(format!("{}?ciave={}&offset={}", constants::constants::baseUrl, letter, offset))
+		.arg(format!("{}?ciave={}&offset={}", constants::baseUrl, letter, offset))
 		.output()
 		.expect("failed to execute process");
 
