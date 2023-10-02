@@ -15,10 +15,16 @@ use std::process::Command;
  * an offset of 20 is needed
  *
  * and obviously an offset of n*20 -> skip n pages
+ *
+ * @param char the letter that the words will start with
+ * @param offset the amount of words to skip before displaying 20 words
+ *
+ * @return a Vec<u8> representing the stdout of curl, aka the html page
  */
-fn curlPage(letter: char, offset: u32) -> Vec<u8> {
+fn curlPage(letter: &str, offset: u32) -> Vec<u8> {
 	let requestStr = format!("{}?{}={}&{}={}", constants::baseUrl, constants::ciave, letter, constants::offset, offset);
-	println!("{}", requestStr);
+
+	//println!("{}", requestStr);
 
 	let scrape = Command::new("curl")
 		.arg(requestStr)
@@ -39,46 +45,70 @@ fn curlPage(letter: char, offset: u32) -> Vec<u8> {
  *
  * @return the amount of words found and added to the array 0 <= n <= 20
  */
-fn appendWords(html: &str, mut vec: Vec<constants::Word>) -> u8 {
+fn appendWords(html: &str, mut words: &Vec<constants::Word>) -> u32 {
 
 	let dom = tl::parse(html, tl::ParserOptions::default()).unwrap();
 
 	// find the navigation box at the end of the page
 	
-	let mut navBox = dom.get_elements_by_class_name("navBox");
+	let mut wordA = dom.get_elements_by_class_name("rollnarans");
 
 	let parser = dom.parser();
 
+	let mut count: u32 = 0;
+
 	loop {
-		let elem = navBox.next();
+		let elem = wordA.next();
 
 		if elem.is_none() {
 			break;
 		}
 
+		let tag = elem
+			.unwrap()
+			.get(parser)
+			.unwrap();
 
-		let tag = elem.unwrap().get(parser).unwrap();
+		let name: String = tag.inner_text(parser).to_string();
+		let outH: String = tag.outer_html(parser).to_string();
 
-		println!("{}", tag.inner_text(parser))
+		let search = "linguaveneta-detalio.asp?ID=";
+
+		let indexStart = outH.find("linguaveneta-detalio.asp?ID=").unwrap();
+		let indexEnd = outH.find("\" class=").unwrap();
+		let ID = outH.get((indexStart + search.len())..indexEnd).unwrap();
+		// println!("{} -> {} {}", indexStart, indexEnd, ID);
+		println!("{}", ID.parse::<u32>().unwrap());
+
+		let word: constants::Word = constants::Word {name: name, ID: ID.parse::<u32>().unwrap()};
+
+
+		count += 1;
 	}
 
-	return false;
+	return count;
 }
 
 
 fn main() {
 
-	let mut array: Vec<String>;
+	let mut wordsFound: Vec<constants::Word> = Vec::new();
+
+	let mut offset: u32 = 0;
+	let mut letterIndex: usize = 0;
 
 	loop {
-		let htmlOwner = String::from_utf8(curlPage('a', 2000)).unwrap();
-		println!("Continuing");
+		let htmlOwner = String::from_utf8(curlPage(constants::letters[letterIndex], offset)).unwrap();
 
-		appendWords();
+		let count = appendWords(htmlOwner.as_str(), &wordsFound);
 
-		if (!canContinue(htmlOwner.as_str())) {
-
+		if (count < constants::wordsPerPage) {
+			letterIndex += 1;
+			offset = 0;
+		} else {
+			offset += 20;
 		}
+
 	}
 	
 }
