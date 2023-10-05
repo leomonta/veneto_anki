@@ -1,6 +1,5 @@
 #![allow(non_upper_case_globals)]
 #![allow(non_snake_case)]
-
 // HAHAHAHAHAHAHAHAHA I'll keep my parethesis
 #![allow(unused_parens)]
 
@@ -9,48 +8,46 @@ mod constants;
 use std::process::Command;
 
 /**
- * curl the dictionary page with the given letter and offset
- *
- * each dictionary page contains 20 words the offset count the amount of words, so, to skip a page
- * an offset of 20 is needed
- *
- * and obviously an offset of n*20 -> skip n pages
- *
- * @param char the letter that the words will start with
- * @param offset the amount of words to skip before displaying 20 words
+ * curl the given url / uri
+ *	
+ * @param uri the uri / url to curl
  *
  * @return a Vec<u8> representing the stdout of curl, aka the html page
  */
-fn curlPage(letter: &str, offset: u32) -> Vec<u8> {
-	let requestStr = format!("{}?{}={}&{}={}", constants::baseUrl, constants::ciave, letter, constants::offset, offset);
+fn curl(uri: String) -> String {
 
-	//println!("{}", requestStr);
+	let scrape = Command::new("curl").arg(uri).output().expect("failed to execute process");
 
-	let scrape = Command::new("curl")
-		.arg(requestStr)
-		.output()
-		.expect("failed to execute process");
-
-	return scrape.stdout;
+	return String::from_utf8(scrape.stdout).unwrap();
 }
 
 /**
- * Analyzing the dom fetches all of the words and relative pages present
- * 
- * also returns the amount of worded added to the given array, if < 20 it means that this is the
+ * Each dictionary page contains 20 words the offset counts the amount of words, so, to skip a
+ * page, an offset of 20 is needed
+ *
+ * and obviously an offset of n * 20 -> skip n pages
+ *
+ * also returns the amount of words added to the given array, if < 20 it means that this is the
  * last page for the given letter
  *
- * @param html the html string to parse
  * @param vec the word vector to add the words to
+ * @param letera the letter the word starts with
+ * @param offset the num of words to skip before retrieve more
  *
  * @return the amount of words found and added to the array 0 <= n <= 20
  */
-fn getWords(html: &str, words: &mut Vec<constants::Word>) -> u32 {
+fn getWords(arr: &mut Vec<u32>, letera: &str, offset: u32) -> u32 {
 
-	let dom = tl::parse(html, tl::ParserOptions::default()).unwrap();
+	// char the letter that the words will start with
+	// offset the amount of words to skip before displaying 20 words
+	let requestStr = format!("{}?{}={}&{}={}", constants::baseUrl, constants::ciave, letera, constants::offset, offset);
+	let html = curl(requestStr);
+
+	let dom = tl::parse(html.as_str(), tl::ParserOptions::default()).unwrap();
 
 	// find the navigation box at the end of the page
-	
+
+	// ?? the name ??
 	let mut wordA = dom.get_elements_by_class_name("rollnarans");
 
 	let parser = dom.parser();
@@ -64,13 +61,8 @@ fn getWords(html: &str, words: &mut Vec<constants::Word>) -> u32 {
 			break;
 		}
 
-		let tag = elem
-			.unwrap()
-			.get(parser)
-			.unwrap();
+		let tag = elem.unwrap().get(parser).unwrap();
 
-		// the word name is just the inner text if the <a> tag
-		let name: String = tag.inner_text(parser).to_string();
 		let outH: String = tag.outer_html(parser).to_string();
 
 		let search = "linguaveneta-detalio.asp?ID=";
@@ -79,10 +71,9 @@ fn getWords(html: &str, words: &mut Vec<constants::Word>) -> u32 {
 		let indexEnd = outH.find("\" class=").unwrap();
 
 		let ID = outH.get((indexStart + search.len())..indexEnd).unwrap();
-		let w: constants::Word = constants::Word {name: name, ID: ID.parse::<u32>().unwrap()};
+		println!("{}", ID);
 
-		words.push(w);
-
+		arr.push(ID.parse::<u32>().unwrap());
 
 		count += 1;
 	}
@@ -91,21 +82,18 @@ fn getWords(html: &str, words: &mut Vec<constants::Word>) -> u32 {
 }
 
 /**
- * calls 'getWords' for every letter in the dictionary until there are no more
+ * calls 'getWords' for every letter in the dictionary until it reaches the end of the it
  *
- * @param arr the vector where to put all of the words retrived
+ * @param arr the vector where to put all of the words retrieved from the dict
  */
-fn getAllWords(arr : &mut Vec<constants::Word>) {
-
+fn getAllWords(arr: &mut Vec<u32>) {
 	let mut offset: u32 = 0;
 
 	for letera in constants::letters {
 		loop {
-			let htmlOwner = String::from_utf8(curlPage(letera, offset)).unwrap();
+			let count = getWords(arr, letera, offset);
 
-			let count = getWords(htmlOwner.as_str(), arr);
-
-			// less than 20 words, Next letter 
+			// less than 20 words, Next letter
 			if (count < constants::wordsPerPage) {
 				offset = 0;
 				break;
@@ -114,18 +102,24 @@ fn getAllWords(arr : &mut Vec<constants::Word>) {
 			offset += 20;
 		}
 	}
+}
 
+
+fn procuraDetaii(id: u32) -> String {
+
+	let uri = format!("{}?{}={}", constants::wordUrl, constants::ID, id);
+	let Res = curl(uri);
 
 }
 
 fn main() {
+	let mut wordsIds: Vec<u32> = Vec::new();
 
-	let mut wordsFound: Vec<constants::Word> = Vec::new();
+	getAllWords(&mut wordsIds);
+
+	// println!("{:?}", wordsIds);
 	
-	getAllWords(&mut wordsFound);
-
 	// get page
 
 	// make the deck?
-	
 }
