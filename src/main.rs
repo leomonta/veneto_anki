@@ -45,7 +45,7 @@ fn curlPage(letter: &str, offset: u32) -> Vec<u8> {
  *
  * @return the amount of words found and added to the array 0 <= n <= 20
  */
-fn appendWords(html: &str, mut words: &Vec<constants::Word>) -> u32 {
+fn getWords(html: &str, words: &mut Vec<constants::Word>) -> u32 {
 
 	let dom = tl::parse(html, tl::ParserOptions::default()).unwrap();
 
@@ -69,6 +69,7 @@ fn appendWords(html: &str, mut words: &Vec<constants::Word>) -> u32 {
 			.get(parser)
 			.unwrap();
 
+		// the word name is just the inner text if the <a> tag
 		let name: String = tag.inner_text(parser).to_string();
 		let outH: String = tag.outer_html(parser).to_string();
 
@@ -76,11 +77,11 @@ fn appendWords(html: &str, mut words: &Vec<constants::Word>) -> u32 {
 
 		let indexStart = outH.find("linguaveneta-detalio.asp?ID=").unwrap();
 		let indexEnd = outH.find("\" class=").unwrap();
-		let ID = outH.get((indexStart + search.len())..indexEnd).unwrap();
-		// println!("{} -> {} {}", indexStart, indexEnd, ID);
-		println!("{}", ID.parse::<u32>().unwrap());
 
-		let word: constants::Word = constants::Word {name: name, ID: ID.parse::<u32>().unwrap()};
+		let ID = outH.get((indexStart + search.len())..indexEnd).unwrap();
+		let w: constants::Word = constants::Word {name: name, ID: ID.parse::<u32>().unwrap()};
+
+		words.push(w);
 
 
 		count += 1;
@@ -89,26 +90,42 @@ fn appendWords(html: &str, mut words: &Vec<constants::Word>) -> u32 {
 	return count;
 }
 
+/**
+ * calls 'getWords' for every letter in the dictionary until there are no more
+ *
+ * @param arr the vector where to put all of the words retrived
+ */
+fn getAllWords(arr : &mut Vec<constants::Word>) {
+
+	let mut offset: u32 = 0;
+
+	for letera in constants::letters {
+		loop {
+			let htmlOwner = String::from_utf8(curlPage(letera, offset)).unwrap();
+
+			let count = getWords(htmlOwner.as_str(), arr);
+
+			// less than 20 words, Next letter 
+			if (count < constants::wordsPerPage) {
+				offset = 0;
+				break;
+			}
+
+			offset += 20;
+		}
+	}
+
+
+}
 
 fn main() {
 
 	let mut wordsFound: Vec<constants::Word> = Vec::new();
+	
+	getAllWords(&mut wordsFound);
 
-	let mut offset: u32 = 0;
-	let mut letterIndex: usize = 0;
+	// get page
 
-	loop {
-		let htmlOwner = String::from_utf8(curlPage(constants::letters[letterIndex], offset)).unwrap();
-
-		let count = appendWords(htmlOwner.as_str(), &wordsFound);
-
-		if (count < constants::wordsPerPage) {
-			letterIndex += 1;
-			offset = 0;
-		} else {
-			offset += 20;
-		}
-
-	}
+	// make the deck?
 	
 }
