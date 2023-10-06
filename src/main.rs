@@ -4,18 +4,18 @@
 #![allow(unused_parens)]
 
 mod constants;
+mod abbrDB;
 
 use std::process::Command;
 
 /**
  * curl the given url / uri
- *	
+ *
  * @param uri the uri / url to curl
  *
  * @return a Vec<u8> representing the stdout of curl, aka the html page
  */
 fn curl(uri: String) -> String {
-
 	let scrape = Command::new("curl").arg(uri).output().expect("failed to execute process");
 
 	return String::from_utf8(scrape.stdout).unwrap();
@@ -37,7 +37,6 @@ fn curl(uri: String) -> String {
  * @return the amount of words found and added to the array 0 <= n <= 20
  */
 fn getWords(arr: &mut Vec<u32>, letera: &str, offset: u32) -> u32 {
-
 	// char the letter that the words will start with
 	// offset the amount of words to skip before displaying 20 words
 	let requestStr = format!("{}?{}={}&{}={}", constants::baseUrl, constants::ciave, letera, constants::offset, offset);
@@ -104,9 +103,7 @@ fn getAllWords(arr: &mut Vec<u32>) {
 	}
 }
 
-
-fn procuraDetaii(id: u32) -> String {
-
+fn procuraDetaio(id: u32) { // -> Vocab {
 	let uri = format!("{}?{}={}", constants::wordUrl, constants::ID, id);
 	let Res = curl(uri);
 
@@ -118,7 +115,7 @@ fn main() {
 	getAllWords(&mut wordsIds);
 
 	// println!("{:?}", wordsIds);
-	
+
 	// get page
 
 	// make the deck?
