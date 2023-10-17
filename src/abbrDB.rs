@@ -117,7 +117,7 @@ pub fn getBibliographics() -> HashMap<&'static str, &'static str> {
 	return res;
 }
 
-pub fn getPlacesused() -> HashMap<&'static str, &'static str> {
+pub fn getPlacesUsed() -> HashMap<&'static str, &'static str> {
 	let res = HashMap::from([
 		("ag", "Agordin"),
 		("bl", "Belun"),

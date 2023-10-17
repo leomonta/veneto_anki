@@ -3,8 +3,8 @@
 // HAHAHAHAHAHAHAHAHA I'll keep my parethesis
 #![allow(unused_parens)]
 
-mod constants;
 mod abbrDB;
+mod constants;
 
 use std::process::Command;
 
@@ -36,7 +36,7 @@ fn curl(uri: String) -> String {
  *
  * @return the amount of words found and added to the array 0 <= n <= 20
  */
-fn getWords(arr: &mut Vec<u32>, letera: &str, offset: u32) -> u32 {
+fn getWordIDs(arr: &mut Vec<u32>, letera: &str, offset: u32) -> u32 {
 	// char the letter that the words will start with
 	// offset the amount of words to skip before displaying 20 words
 	let requestStr = format!("{}?{}={}&{}={}", constants::baseUrl, constants::ciave, letera, constants::offset, offset);
@@ -70,7 +70,6 @@ fn getWords(arr: &mut Vec<u32>, letera: &str, offset: u32) -> u32 {
 		let indexEnd = outH.find("\" class=").unwrap();
 
 		let ID = outH.get((indexStart + search.len())..indexEnd).unwrap();
-		println!("{}", ID);
 
 		arr.push(ID.parse::<u32>().unwrap());
 
@@ -85,12 +84,12 @@ fn getWords(arr: &mut Vec<u32>, letera: &str, offset: u32) -> u32 {
  *
  * @param arr the vector where to put all of the words retrieved from the dict
  */
-fn getAllWords(arr: &mut Vec<u32>) {
+fn getAllIDs(arr: &mut Vec<u32>) {
 	let mut offset: u32 = 0;
 
 	for letera in constants::letters {
 		loop {
-			let count = getWords(arr, letera, offset);
+			let count = getWordIDs(arr, letera, offset);
 
 			// less than 20 words, Next letter
 			if (count < constants::wordsPerPage) {
@@ -103,18 +102,24 @@ fn getAllWords(arr: &mut Vec<u32>) {
 	}
 }
 
-fn procuraDetaio(id: u32) { // -> Vocab {
+fn procuraDetaio(id: u32) {
 	let uri = format!("{}?{}={}", constants::wordUrl, constants::ID, id);
 	let Res = curl(uri);
-
 }
 
 fn main() {
+	let AUse     = abbrDB::getUseAbbreviations();
+	let AGrammar = abbrDB::getGrammaticalAbbreviations();
+	let LEtmo    = abbrDB::getEtimologicalLanguage();
+	let AEtmo    = abbrDB::getEtimologicalAbbreviations();
+	let ABiblio  = abbrDB::getBibliographics();
+	let APLace   = abbrDB::getPlacesUsed();
+
 	let mut wordsIds: Vec<u32> = Vec::new();
 
-	getAllWords(&mut wordsIds);
+	getAllIDs(&mut wordsIds);
 
-	// println!("{:?}", wordsIds);
+	println!("{:?}", wordsIds);
 
 	// get page
 
